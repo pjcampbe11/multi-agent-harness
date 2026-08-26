@@ -1,0 +1,7 @@
+# Core — required
+openai>=1.30.0          # OpenAI-compatible chat client (works with local/vLLM/Ollama/etc.)
+numpy>=1.24.0           # diversity math
+
+# Recommended — semantic diversity scoring. If absent, the harness falls back to a
+# deterministic lexical embedding automatically (see xteaming/diversity.py).
+sentence-transformers>=2.6.0

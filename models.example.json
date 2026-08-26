@@ -1,0 +1,51 @@
+{
+  "_comment": "Reference model matrix, August 2026. Verify exact API ids against each provider's current docs before a run — model names churn. Each entry: how to reach it. Use a strong `attacker`/`verifier`, and set `target` to whatever you are AUTHORIZED to assess.",
+  "closed_frontier": {
+    "anthropic": {
+      "env_key": "ANTHROPIC_API_KEY",
+      "base_url": "https://api.anthropic.com/v1",
+      "note": "Anthropic's own endpoint is not OpenAI-shaped; reach Claude through an OpenAI-compatible gateway (LiteLLM/OpenRouter) or the Anthropic SDK. Example ids seen Aug 2026: claude-opus-5, claude-sonnet-5, claude-fable-5.",
+      "example_targets": ["claude-opus-5", "claude-sonnet-5"]
+    },
+    "openai": {
+      "env_key": "OPENAI_API_KEY",
+      "base_url": null,
+      "example_targets": ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-4o-mini"]
+    },
+    "google": {
+      "env_key": "GEMINI_API_KEY",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "note": "Gemini exposes an OpenAI-compatible endpoint.",
+      "example_targets": ["gemini-3-pro", "gemini-3-flash"]
+    },
+    "xai": {
+      "env_key": "XAI_API_KEY",
+      "base_url": "https://api.x.ai/v1",
+      "example_targets": ["grok-4"]
+    },
+    "moonshot": {
+      "env_key": "MOONSHOT_API_KEY",
+      "base_url": "https://api.moonshot.ai/v1",
+      "example_targets": ["kimi-k3"]
+    }
+  },
+  "open_weight_via_ollama": {
+    "env_key": "OPENAI_API_KEY",
+    "base_url": "http://localhost:11434/v1",
+    "note": "Run `ollama serve`, then `ollama pull <tag>`. Any key value works locally. Tags seen Aug 2026 below.",
+    "example_targets": [
+      "qwen3.5:27b",
+      "llama3.3:70b",
+      "gemma4:26b",
+      "deepseek-r1:32b",
+      "gpt-oss:20b",
+      "qwen3-coder:30b"
+    ]
+  },
+  "open_weight_via_hosted": {
+    "note": "Together, Groq, Fireworks, OpenRouter all expose OpenAI-compatible endpoints for open-weight models.",
+    "together": {"env_key": "TOGETHER_API_KEY", "base_url": "https://api.together.xyz/v1"},
+    "groq": {"env_key": "GROQ_API_KEY", "base_url": "https://api.groq.com/openai/v1"},
+    "openrouter": {"env_key": "OPENROUTER_API_KEY", "base_url": "https://openrouter.ai/api/v1"}
+  }
+}
