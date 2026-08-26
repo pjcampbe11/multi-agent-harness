@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD033 MD041 -->
-<h1 align="center">X-Teaming Harness</h1>
+<h1 align="center">Multi-Agent Harness</h1>
 
 <p align="center">
 A faithful, model-agnostic reimplementation of the four-agent multi-turn red-teaming
