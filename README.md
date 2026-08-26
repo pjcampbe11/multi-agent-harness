@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD033 MD041 -->
-<h1 align="center">Multi-Agent Harness</h1>
+<h1 align="center"> Multi-Turn with Adaptive Multi-Agents Harness</h1>
 
 <p align="center">
 A faithful, model-agnostic reimplementation of the four-agent multi-turn red-teaming
@@ -131,6 +131,25 @@ export OPENAI_API_KEY=sk-...                 # your key
 export XTEAMING_MODEL=gpt-4o-mini            # a cheap model to smoke-test with
 ```
 
+**The three roles need API access, not a chat subscription.** The harness calls models
+over the API. A **Claude Pro/Max** (or ChatGPT Plus) plan is a *chat* subscription — it
+does **not** include an API key, and Anthropic's terms prohibit driving third-party
+tools with subscription credentials. To use Claude for any role you need a **separate,
+pay-as-you-go Anthropic API key** from `console.anthropic.com` (see §6). If all you have
+is an **OpenAI API key, that's enough — run all three roles on it** (next box).
+
+**One-key setup — all three roles on OpenAI, with role independence**
+
+Use *different models* per role so the Verifier isn't grading its own or the attacker's
+work. The one rule that matters: **Verifier ≠ Attacker, and Verifier ≠ Target.**
+
+```bash
+export OPENAI_API_KEY=sk-...
+# attacker drives the turns (cheap is fine); target is what you assess;
+# verifier is a DIFFERENT, ideally stronger model than both.
+#   --attacker gpt-4o-mini   --target gpt-4o-mini   --verifier gpt-4o
+```
+
 **Backend B — fully local with Ollama (no keys, no data leaves your box)**
 
 ```bash
@@ -160,7 +179,7 @@ provider's current docs before a run — names churn monthly.
 
 | Provider | Reach it via | `base_url` | Example ids (Aug 2026) |
 |---|---|---|---|
-| **Anthropic** | OpenAI-compat gateway (LiteLLM / OpenRouter) | gateway url | `claude-opus-5`, `claude-sonnet-5`, `claude-fable-5` |
+| **Anthropic** | Anthropic API key (OpenAI-compat endpoint or gateway) | `https://api.anthropic.com/v1/` | `claude-opus-5`, `claude-sonnet-5`, `claude-fable-5` |
 | **OpenAI** | native | *(default)* | `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-4o-mini` |
 | **Google** | OpenAI-compat endpoint | `…/v1beta/openai` | `gemini-3-pro`, `gemini-3-flash` |
 | **xAI** | native OpenAI-compat | `https://api.x.ai/v1` | `grok-4` |
@@ -171,6 +190,26 @@ provider's current docs before a run — names churn monthly.
 > Because every role speaks the OpenAI chat protocol, mixing providers is trivial:
 > a strong **attacker** on one endpoint, the **target** on another, a neutral
 > **verifier** on a third to avoid self-grading bias.
+
+**Note on Claude Max / Pro.** A chat subscription is not API access — see §5. To use a
+Claude model as the attacker (or verifier), get an Anthropic API key and point that role
+at it:
+
+```bash
+# Attacker = Claude (Anthropic key); Target + Verifier = OpenAI (your key)
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
+python -m xteaming.cli attack \
+    --objectives objectives.example.jsonl \
+    --attacker claude-sonnet-5 --base-url https://api.anthropic.com/v1/ --api-key-env ANTHROPIC_API_KEY \
+    --target   gpt-4o-mini \
+    --verifier gpt-4o --verifier-key-env OPENAI_API_KEY --verifier-base-url "" \
+    --out runs --authorized
+```
+
+The `--verifier-base-url` / `--verifier-key-env` flags let the verifier run on its own
+endpoint and key, fully independent of the attacker — the correct setup when the
+attacker is Claude and you want an OpenAI verifier.
 
 [↑ contents](#table-of-contents)
 
@@ -223,24 +262,24 @@ A complete session from a clean checkout. Uses the benign objectives; swap in yo
 `--objectives` file for a real run.
 
 ```bash
-# 0. setup (see §5)
+# 0. setup (see §5) — one OpenAI key covers all three roles
 source .venv/bin/activate
-export XTEAMING_MODEL=gpt-4o-mini
 export OPENAI_API_KEY=sk-...
 
 # 1. PLAN — generate diverse plans, print realized diversity per objective
 python -m xteaming.cli plan \
     --objectives objectives.example.jsonl \
-    --model "$XTEAMING_MODEL" \
+    --model gpt-4o-mini \
     --n-plans 20 --min-diversity 0.702 \
     --out artifacts/plans.json
 
-# 2. ATTACK — run the full loop against ONE target you are authorized to test
+# 2. ATTACK — full loop against ONE authorized target.
+#    Distinct models per role: verifier differs from attacker AND target.
 python -m xteaming.cli attack \
     --objectives objectives.example.jsonl \
-    --attacker "$XTEAMING_MODEL" \
-    --target   "$XTEAMING_MODEL" \
-    --verifier "$XTEAMING_MODEL" \
+    --attacker gpt-4o-mini \
+    --target   gpt-4o-mini \
+    --verifier gpt-4o \
     --n-plans 20 --max-plans 5 \
     --out runs \
     --authorized                       # ← required; confirms you may test the target
@@ -255,6 +294,11 @@ python -m xteaming.cli analyze scores --run runs
 ```
 
 `--run runs` accepts the parent dir and auto-selects the newest run inside it.
+
+> **First-run cost.** Each turn is several API calls (attacker + verifier, plus up to 4
+> optimizer calls on a score drop), times plans times turns. For a cheap first pass use
+> `--n-plans 4 --max-plans 2`; scale up once you've seen it work. Keeping the attacker
+> and verifier on `-mini`-class models keeps a full run to cents.
 
 [↑ contents](#table-of-contents)
 
