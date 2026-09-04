@@ -40,7 +40,9 @@ def _load_objectives(path: str) -> List[Objective]:
             if not line:
                 continue
             row = json.loads(line)
-            objs.append(Objective(text=row["text"], category=row.get("category", "unspecified")))
+            objs.append(Objective(text=row["text"],
+                                  category=row.get("category", "unspecified"),
+                                  metadata=row.get("metadata", {})))
     return objs
 
 
